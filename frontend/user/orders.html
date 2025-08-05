@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pesanan Saya | Kantin Digital</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 1rem 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .navbar-container {
+      max-width: 1100px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2rem;
+    }
+
+    .navbar-brand {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .navbar-menu a {
+      color: #dfe6e9;
+      margin-left: 1.5rem;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .navbar-menu a:hover,
+    .navbar-menu a.active {
+      color: #00cec9;
+    }
+
+    .orders-container {
+      max-width: 900px;
+      margin: auto;
+      padding: 2rem;
+    }
+
+    .orders-container h2 {
+      color: #2d3436;
+      margin-bottom: 2rem;
+    }
+
+    .order-card {
+      background: #fff;
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    .order-card h3 {
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+
+    .status {
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 0.5rem;
+    }
+
+    .status.processing {
+      background-color: #ffeaa7;
+      color: #d35400;
+    }
+
+    .status.ready {
+      background-color: #55efc4;
+      color: #00695c;
+    }
+
+    .qr-code {
+      margin-top: 1rem;
+    }
+
+    .btn-invoice {
+      background-color: #0984e3;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    .btn-invoice:hover {
+      background-color: #74b9ff;
+    }
+
+    .footer {
+      background-color: #4CAF50;
+      color: #dfe6e9;
+      text-align: center;
+      padding: 1.2rem;
+      margin-top: 3rem;
+    }
+
+    .footer-content {
+      font-size: 0.95rem;
+    }
+
+    .status.waiting {
+      background-color: #ffeaa7;
+      color: #e17055;
+    }
+    .status.processing {
+      background-color: #74b9ff;
+      color: #1e3799;
+    }
+    .status.ready {
+      background-color: #55efc4;
+      color: #00695c;
+    }
+    .status.cancelled {
+      background-color: #fab1a0;
+      color: #c0392b;
+    }
+    .btn-cancel {
+      background-color: #e74c3c;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: background-color 0.3s ease;
+    }
+    .btn-cancel:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-container">
+      <a href="/user/home.html" class="navbar-brand">🍱 Kantin Digital</a>
+      <nav class="navbar-menu">
+        <a href="/user/home.html">Home</a>
+        <a href="/user/menu.html">Menu</a>
+        <a href="/user/orders.html" class="active">Pesanan</a>
+        <a href="/user/history.html">Riwayat</a>
+        <a href="#" onclick="logout()">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="orders-container">
+    <h2>📦 Daftar Pesanan Anda</h2>
+    <div id="ordersList"></div>
+  </main>
+ 
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2025 Kantin Digital. Dibuat oleh Nawfaldy Daffa.</p>
+    </div>
+  </footer>
+
+<script>
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (!user || !user.id) {
+    alert("User belum login.");
+    window.location.href = "/login.html";
+  } else {
+    fetchOrders(user.id);
+  }
+
+  async function fetchOrders(userId) {
+    const ordersContainer = document.getElementById('ordersList');
+    ordersContainer.innerHTML = "<p>⏳ Memuat pesanan...</p>";
+
+    try {
+        const res = await fetch(`/api/orders/user/history/${userId}`);
+        const data = await res.json();
+
+        console.log("Pesanan dari server:", data);
+
+        if (data.length === 0) {
+            ordersContainer.innerHTML = "<p>Belum ada pesanan.</p>";
+            return;
+        }
+
+        ordersContainer.innerHTML = data
+  .map(order => `
+    <div class="order-card" id="order-card-${order.order_id}">
+      <h3>🧾 Pesanan #${order.order_id}</h3>
+      <button onclick="cancelOrder(${order.order_id})" class="btn-cancel">❌ Batalkan Pesanan</button>
+      <p><strong>Tanggal:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+      <ul style="margin-top: 0.5rem;">
+        ${order.items.map(item => `
+          <li>
+            <span>${item.menu_name} x${item.quantity}</span>
+            <span>Rp ${item.price}</span>
+          </li>
+        `).join('')}
+        <li>
+          <span><strong>Total:</strong></span>
+          <span>Rp ${order.total}</span>
+        </li>                              
+      </ul>
+
+      <span class="status ${
+        order.status === 'Diproses'
+          ? 'processing'
+          : order.status === 'Siap Diambil'
+          ? 'ready'
+          : order.status === 'Dibatalkan'
+          ? 'cancelled'
+          : 'waiting'
+      }">${order.status}</span>
+
+      ${order.status === 'Menunggu Konfirmasi' && !order.is_cancelled ? ` ... 
+        <button onclick="cancelOrder(${order.order_id})" 
+        class="text-red-600 hover:text-red-800 border border-red-600 hover:bg-red-100 px-3 py-1 rounded transition duration-200 mt-2">
+        ❌ Batalkan Pesanan
+        </button>
+        <div id="cancel-form-${order.order_id}" class="hidden" style="margin-top: 1rem;">
+          <textarea id="reason-${order.order_id}" placeholder="Alasan pembatalan..." style="width: 100%; padding: 0.5rem;"></textarea>
+          <button onclick="submitCancel(${order.order_id})" class="btn-invoice" style="background-color: #b71540;">Kirim</button>
+        </div>
+      ` : ''}
+
+      ${order.qr_code ? `
+        <div class="qr-code">
+          <p><strong>QR Code untuk konfirmasi:</strong></p>
+          <a href="${order.qr_code}" target="_blank">
+            <img src="${order.qr_code}" width="120" />
+          </a>
+        </div>
+      ` : ''}
+    </div>
+    
+  `).join('');
+
+    } catch (err) {
+        console.error("Gagal fetch pesanan:", err);
+        ordersContainer.innerHTML = "<p style='color:red;'>Gagal memuat pesanan.</p>";
+    }
+}
+</script>
+<script>
+  function cancelOrder(orderId) {
+  const reason = prompt("Masukkan alasan pembatalan:");
+  if (!reason) return;
+
+  fetch(`/api/orders/cancel/${orderId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ cancel_reason: reason })  // ← disisipkan di sini
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Pesanan berhasil dibatalkan.");
+      // Hapus kartu pesanan langsung dari halaman tanpa reload
+      const card = document.getElementById(`order-card-${orderId}`);
+      if (card) card.remove();
+    } else {
+      alert("Gagal membatalkan pesanan.");
+    }
+  })
+  .catch(err => {
+    console.error("Error:", err);
+    alert("Terjadi kesalahan.");
+  });
+}
+</script>
+<script src="../script.js"></script>
+</body>
+</html>

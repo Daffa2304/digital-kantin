@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu - Kantin Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user) {
+        alert("Sesi kamu telah berakhir. Silakan login kembali.");
+        window.location.href = "/login.html";
+      }
+    </script>
+    <style>
+      .fade-in {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+      }
+
+      .fade-in.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .favorite.active svg {
+        fill: red;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-800">
+    <!-- Header -->
+    <header class="bg-white shadow sticky top-0 z-10">
+      <div
+        class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center"
+      >
+        <h1 class="text-2xl font-bold text-green-600">Kantin Digital</h1>
+        <nav>
+          <a href="/home" class="text-gray-600 hover:text-green-600 mx-2"
+            >Home</a
+          >
+          <a href="/menu" class="text-gray-800 font-semibold mx-2">Menu</a>
+          <a href="/orders" class="text-gray-600 hover:text-green-600 mx-2"
+            >Pesanan</a
+          >
+          <a href="/history" class="text-gray-600 hover:text-green-600 mx-2"
+            >Riwayat Pesanan</a
+          >
+          <a href="#" onclick="logout()">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Section: Pencarian & Filter -->
+    <section class="max-w-7xl mx-auto px-4 py-8">
+      <h2 class="text-3xl font-bold mb-6">🍱 Menu Makanan</h2>
+
+      <!-- Search & Filter -->
+      <div
+        class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
+      >
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Cari makanan atau minuman..."
+          class="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+        <select
+          id="categoryFilter"
+          class="w-full md:w-1/4 p-3 border border-gray-300 rounded-lg"
+        >
+          <option value="">Semua Kategori</option>
+          <option value="Makanan">🍛 Makanan</option>
+          <option value="Minuman">🥤 Minuman</option>
+          <option value="Cemilan">🍩 Cemilan</option>
+        </select>
+      </div>
+
+      <!-- AI Rekomendasi -->
+      <div
+        id="aiRecommendation"
+        class="bg-green-100 text-green-800 p-4 rounded-lg mb-6 shadow-sm font-medium"
+      >
+        🔮 Rekomendasi AI: Sedang memuat...
+      </div>
+
+      <!-- Grid Menu -->
+      <div
+        id="menuGrid"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+      ></div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-green-500 text-white py-6">
+      <div class="text-center">
+        &copy; 2025 Kantin Digital. Dibuat oleh Nawfaldy Daffa.
+      </div>
+    </footer>
+
+    <!-- Popup Deskripsi -->
+    <div
+      id="popup"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
+    >
+      <div class="bg-white p-6 rounded-xl shadow-lg max-w-md w-full relative">
+        <button
+          onclick="closePopup()"
+          class="absolute top-2 right-3 text-gray-400 hover:text-black text-xl font-bold"
+        >
+          &times;
+        </button>
+        <img
+          id="popup-img"
+          src=""
+          alt="Gambar Menu"
+          class="w-full h-48 object-cover rounded mb-4"
+        />
+        <h2 id="popup-title" class="text-xl font-bold mb-2"></h2>
+        <p id="popup-desc" class="text-sm text-gray-700"></p>
+      </div>
+    </div>
+    <script>
+      document
+        .getElementById("order-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const user = JSON.parse(localStorage.getItem("user")); // ambil user dari localStorage
+          if (!user || !user.id) {
+            alert("User belum login.");
+            return;
+          }
+
+          const user_id = user.id;
+          const menu_id = parseInt(document.getElementById("menu_id").value);
+          const quantity = parseInt(document.getElementById("quantity").value);
+
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id,
+              items: [{ menu_id, quantity }],
+            }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            alert("Pesanan berhasil dibuat!");
+          } else {
+            alert("Gagal membuat pesanan: " + data.message);
+          }
+        });
+    </script>
+    <script>
+      const menuGrid = document.getElementById("menuGrid");
+      const searchInput = document.getElementById("searchInput");
+      const categoryFilter = document.getElementById("categoryFilter");
+      const aiRec = document.getElementById("aiRecommendation");
+
+      let menuItems = [];
+
+      function renderMenus(filteredItems) {
+        menuGrid.innerHTML = "";
+        if (filteredItems.length === 0) {
+          menuGrid.innerHTML =
+            "<p class='col-span-3 text-center text-gray-500'>Menu tidak ditemukan.</p>";
+          return;
+        }
+
+        filteredItems.forEach((item, index) => {
+          const card = document.createElement("div");
+          card.className =
+            "bg-white relative rounded-2xl shadow-md overflow-hidden hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ease-in-out fade-in";
+
+          card.innerHTML = `
+          <span class="absolute top-3 right-3 bg-yellow-400 text-white text-sm font-bold px-3 py-1 rounded shadow-md z-10">Rp ${
+            item.price
+          }</span>
+<button class="absolute top-3 left-3 z-10 favorite" onclick="toggleFavorite(this)">
+  <svg class="w-6 h-6 text-white drop-shadow-md hover:scale-110 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+  </svg>
+</button>
+<div class="h-48 w-full overflow-hidden">
+  <img src="/assets/img/${item.image_url}" alt="${
+            item.name
+          }" class="object-cover w-full h-full cursor-pointer" onclick="showPopup('${
+            item.name
+          }', '${item.description}', '${item.image_url}')">
+</div>
+<div class="p-4">
+  <h3 class="font-bold text-lg mb-1">${item.name}</h3>
+  <p class="text-sm text-gray-600 mb-3">${item.description}</p>
+  <div class="flex items-center justify-between">
+  <button id="order-btn-${item.id}" onclick="showQuantityControls(${
+            item.id
+          })" class="bg-green-500 text-white px-4 py-1 rounded-lg text-sm">Pesan</button>
+  <div id="qty-controls-${item.id}" class="flex items-center space-x-2 hidden">
+    <button onclick="updateCart(${item.id}, '${item.name}', ${item.price}, '${
+            item.image_url
+          }', 'sub')" class="bg-red-500 text-white px-2 rounded-full">−</button>
+    <span id="qty-${item.id}">${
+            cart.find((x) => x.menu_id === item.id)?.quantity || 0
+          }</span>
+    <button onclick="updateCart(${item.id}, '${item.name}', ${item.price}, '${
+            item.image_url
+          }', 'add')" class="bg-green-500 text-white px-2 rounded-full">+</button>
+  </div>
+</div>
+
+      `;
+          menuGrid.appendChild(card);
+          renderQtyAndButton(item.id);
+
+          // Trigger fade-in when visible
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add("visible");
+                  observer.unobserve(entry.target);
+                }
+              });
+            },
+            { threshold: 0.1 }
+          );
+
+          observer.observe(card);
+        });
+      }
+
+      function filterMenus() {
+        const keyword = searchInput.value.toLowerCase();
+        const category = categoryFilter.value.toLowerCase();
+        const filtered = menuItems.filter(
+          (item) =>
+            item.name.toLowerCase().includes(keyword) &&
+            (category === "" || item.category.toLowerCase() === category)
+        );
+        renderMenus(filtered);
+      }
+      function getAIRecommendation() {
+      const hour = new Date().getHours();
+      let timeLabel = "";
+
+      if (hour < 11) {
+        timeLabel = "Pagi 🌞 - Pisang Goreng + Kopi";
+      } else if (hour < 16) {
+        timeLabel = "Siang ☀️ - Nasi Goreng atau Ayam Geprek";
+      } else if (hour < 18) {
+        timeLabel = "Sore 🌤️ - Mie Ayam atau Bakso";
+      } else {
+        timeLabel = "Malam 🌙 - Donat & Teh Tarik";
+   }
+
+  aiRec.innerText = "🔮 Rekomendasi AI: " + timeLabel;
+}
+      // Fetch menu data
+      fetch("/api/menu")
+        .then((res) => res.json())
+        .then((data) => {
+          menuItems = data;
+          renderMenus(menuItems);
+        })
+        .catch((err) => {
+          menuGrid.innerHTML =
+            "<p class='col-span-3 text-center text-red-500'>Gagal memuat menu.</p>";
+          console.error("Error fetch menu:", err);
+        });
+
+      searchInput.addEventListener("input", filterMenus);
+      categoryFilter.addEventListener("change", filterMenus);
+
+      function handleOrder(menuId) {
+        const user = JSON.parse(localStorage.getItem("user"));
+
+        if (!user || !user.id) {
+          alert("User belum login.");
+          return;
+        }
+
+        fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user.id, // ← Ini yang benar
+            items: [{ menu_id: menuId, quantity: 1 }],
+          }),
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error("Gagal memesan");
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Pesanan berhasil:", data);
+            alert("Pesanan berhasil!");
+            window.location.href = "/orders.html"; // Pastikan file ini ada
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Gagal membuat pesanan");
+          });
+      }
+
+      // Load AI suggestion
+      getAIRecommendation();
+    </script>
+    <script>
+      function toggleFavorite(btn) {
+        btn.classList.toggle("active");
+      }
+
+      function showPopup(name, description, imageUrl) {
+        document.getElementById("popup-title").textContent = name;
+        document.getElementById("popup-desc").textContent = description;
+        document.getElementById("popup-img").src = `/assets/img/${imageUrl}`;
+        document.getElementById("popup").classList.remove("hidden");
+        document.getElementById("popup").classList.add("flex");
+      }
+
+      function closePopup() {
+        document.getElementById("popup").classList.add("hidden");
+        document.getElementById("popup").classList.remove("flex");
+      }
+    </script>
+    <script>
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+      function updateCart(menuId, name, price, image, action) {
+        let index = cart.findIndex((item) => item.menu_id === menuId);
+
+        if (index === -1 && action === "add") {
+          cart.push({ menu_id: menuId, name, price, image, quantity: 1 });
+        } else if (index !== -1) {
+          if (action === "add") {
+            cart[index].quantity += 1;
+          } else if (action === "sub") {
+            cart[index].quantity -= 1;
+            if (cart[index].quantity <= 0) {
+              cart.splice(index, 1);
+              document
+                .getElementById(`qty-controls-${menuId}`)
+                .classList.add("hidden");
+              document
+                .getElementById(`order-btn-${menuId}`)
+                .classList.remove("hidden");
+            }
+          }
+
+          localStorage.setItem("cart", JSON.stringify(cart));
+          renderQtyAndButton(menuId);
+          renderCartButton();
+        }
+
+        localStorage.setItem("cart", JSON.stringify(cart));
+        renderQtyAndButton(menuId);
+        renderCartButton();
+      }
+
+      function renderCartButton() {
+        const btn = document.getElementById("cartButton");
+        const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+        btn.innerText = `🛒 Lihat Keranjang (${totalQty})`;
+        btn.classList.toggle("hidden", totalQty === 0);
+      }
+
+      function goToCart() {
+        window.location.href = "/user/cart.html"; // buat halaman ini
+      }
+
+      function renderQtyAndButton(menuId) {
+        const qtyText = document.getElementById(`qty-${menuId}`);
+        const qtyControls = document.getElementById(`qty-controls-${menuId}`);
+        const orderBtn = document.getElementById(`order-btn-${menuId}`);
+        const item = cart.find((x) => x.menu_id === menuId);
+
+        if (item && item.quantity > 0) {
+          qtyText.innerText = item.quantity;
+          qtyControls.classList.remove("hidden");
+          orderBtn.classList.add("hidden");
+        } else {
+          qtyText.innerText = 0;
+          qtyControls.classList.add("hidden");
+          orderBtn.classList.remove("hidden");
+        }
+      }
+
+      renderCartButton();
+      function showQuantityControls(menuId) {
+        document.getElementById(`order-btn-${menuId}`).classList.add("hidden");
+        document
+          .getElementById(`qty-controls-${menuId}`)
+          .classList.remove("hidden");
+
+        // auto add 1 item ke cart saat tombol "Pesan" diklik pertama kali
+        updateCart(
+          menuId,
+          menuItems.find((m) => m.id === menuId).name,
+          menuItems.find((m) => m.id === menuId).price,
+          menuItems.find((m) => m.id === menuId).image_url,
+          "add"
+        );
+      }
+    </script>
+    <script src="../script.js"></script>
+    <button
+      id="cartButton"
+      onclick="goToCart()"
+      class="fixed bottom-6 right-6 bg-green-600 text-white px-5 py-3 rounded-full shadow-xl hover:bg-green-700 transition hidden z-50"
+    >
+      🛒 Lihat Keranjang (0)
+    </button>
+  </body>
+</html>

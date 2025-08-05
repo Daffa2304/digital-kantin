@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Home - Kantin Digital</title>
+  <link rel="stylesheet" href="/styles/user.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com">  
+  </script>
+  <script>
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) {
+    alert("Sesi kamu telah berakhir. Silakan login kembali.");
+    window.location.href = "/login.html";
+  }
+</script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background-color: #f9f9f9;
+    }
+
+    header {
+      background-color: #29c11f;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: white;
+      margin: 0;
+    }
+
+    nav a {
+      margin-left: 2rem;
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    nav a:hover {
+      color: #27ae60;
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4rem 6%;
+      background-color: #ececec;
+      border-bottom: 2px solid #ececec;
+    }
+
+    .hero-text {
+      max-width: 50%;
+    }
+    @keyframes fadein-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadein {
+  animation: fadein-up 1s ease-out forwards;
+}
+
+
+    .hero-text h2 {
+      font-size: 2.5rem;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    .hero-text p {
+      font-size: 1.2rem;
+      color: #555;
+    }
+
+    .hero-image img {
+      max-width: 480px;
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .about {
+      padding: 4rem 6%;
+      background-color: #fff;
+      text-align: center;
+    }
+
+    .about h3 {
+      font-size: 2rem;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    .about p {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      color: #555;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        flex-direction: column;
+        text-align: center;
+      }
+      .hero-text, .hero-image {
+        max-width: 100%;
+      }
+      .hero-text {
+        margin-bottom: 2rem;
+      }
+    }
+    .about-cards {
+  padding: 50px 20px;
+  background-color: #f9f9f9;
+  text-align: center;
+}
+
+.about-title {
+  font-size: 32px;
+  margin-bottom: 40px;
+  color: #333;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.card {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+.card h4 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.card p {
+  font-size: 15px;
+  color: #555;
+  line-height: 1.6;
+}
+
+    
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kantin Digital</h1>
+    <nav>
+      <a href="/user/home.html">Home</a>
+      <a href="/user/menu.html">Menu</a>
+      <a href="/user/orders.html">Pesanan</a>
+      <a href="/user/history.html">Riwayat</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+  <section class="hero">
+  <div class="hero-text animate-fadein">
+    <h2>Selamat Datang di Kantin Digital!</h2>
+    <p>Pesan makanan dengan mudah, cepat dan tanpa antri! Cukup pilih menu favoritmu dan tunggu notifikasi siap diambil.</p>
+    <div class="mt-6">
+      <a href="/menu" class="inline-block bg-green-600 hover:bg-green-700 text-white text-lg font-medium px-6 py-3 rounded-lg transition">
+        View Menu Now →
+      </a>
+    </div>
+  </div>
+  <div class="hero-image">
+    <img src="/assets/img/kantin.jpg" alt="Ilustrasi Kantin">
+  </div>
+</section>
+  <!-- About Section -->
+<section id="about" class="bg-white py-16 px-6">
+  <div class="max-w-7xl mx-auto text-center">
+    <h2 class="text-3xl font-bold mb-10 text-gray-800">About Us</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Card 1 -->
+      <div class="bg-gray-100 p-6 rounded-xl shadow-md hover:shadow-lg transition">
+        <h3 class="text-xl font-semibold mb-2">🍽️ Apa Itu Kantin Digital?</h3>
+        <p class="text-gray-700">Kantin Digital adalah platform pemesanan makanan yang memudahkan pelanggan untuk melihat menu, memesan makanan dan minuman tanpa antri panjang. semua menu tersedia dalam website ini.</p>
+      </div>
+      <!-- Card 2 -->
+      <div class="bg-gray-100 p-6 rounded-xl shadow-md hover:shadow-lg transition">
+        <h3 class="text-xl font-semibold mb-2">👨‍💻 Pembuat Web</h3>
+        <p class="text-gray-700">Website ini dibuat oleh Nawfaldy Daffa, seorang mahasiswa yang sedang menyelesaikan penulisan ilmiah yang berguna untuk kelulusan sarjana dan membangun pengalaman di bidang pengembangan web modern. Menggunakan teknologi Node.js, MySQL, dan AI sederhana untuk meningkatkan pengalaman pengguna.</p>
+      </div>
+      <!-- Card 3 -->
+      <div class="bg-gray-100 p-6 rounded-xl shadow-md hover:shadow-lg transition">
+        <h3 class="text-xl font-semibold mb-2">🎯 Visi Kantin</h3>
+        <p class="text-gray-700">MMenjadi kantin modern berbasis teknologi yang cepat, efisien, dan dapat diakses siapa saja. Kami berkomitmen menyediakan layanan terbaik dengan inovasi digital berkelanjutan.</p>
+      </div>
+      <!-- Card 4 -->
+      <div class="bg-gray-100 p-6 rounded-xl shadow-md hover:shadow-lg transition">
+        <h3 class="text-xl font-semibold mb-2">📞 Kontak Kami</h3>
+        <p class="text-gray-700">Jika Anda memiliki pertanyaan atau masukan, silakan hubungi kami di <strong>ndaffa2304@gmail.com</strong> atau melalui WhatsApp di <strong>+62....</strong> bisa juga di Instagram<strong>@nawpaldff_</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-green-500 text-white py-6 mt-16">
+  <div class="text-center">
+    &copy; 2025 Kantin Digital. Dibuat oleh Nawfaldy Daffa.
+  </div>
+</footer>
+
+<script>
+  function logout() {
+    localStorage.removeItem("user"); // hapus data user dari localStorage
+    fetch("/logout") // panggil backend logout (jika ada)
+      .then(() => {
+        alert("Berhasil logout!");
+        window.location.href = "/login.html"; // redirect ke login
+      })
+      .catch((err) => {
+        console.error("Logout gagal:", err);
+        alert("Terjadi kesalahan saat logout");
+      });
+  }
+</script>

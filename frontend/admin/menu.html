@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola Menu - Admin Kantin Digital</title>
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9fafb;
+      color: #1f2937;
+    }
+
+    .navbar {
+      background-color: #1f2937;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin-left: 1.5rem;
+    }
+
+    main {
+      max-width: 800px;
+      margin: auto;
+      padding: 2rem;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    input, textarea, select, button {
+      padding: 0.8rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+    }
+
+    button {
+      background-color: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    .menu-list {
+      margin-top: 2rem;
+    }
+
+    .menu-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .menu-item img {
+      width: 100%;
+      max-height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+    }
+    
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    tr:hover {background-color: #f5f5f5;}
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">Admin Kantin</div>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="menu.html" class="active">Kelola Menu</a>
+      <a href="orders.html">Pesanan</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Tambah Menu Baru</h2>
+    <form id="menu-form" enctype="multipart/form-data">
+      <input type="hidden" name="mode" id="mode" value="add" />
+      <input type="hidden" name="id" id="id" />
+      <input type="hidden" name="existing_image" id="existing-image" />
+      <input type="text" id="name" placeholder="Nama Makanan" required />
+      <textarea id="description" placeholder="Deskripsi" required></textarea>
+      <input type="number" id="price" placeholder="Harga" required />
+      <input type="file" id="image" accept="image/*" />
+      <label>Preview Image</label>
+      <div id="preview"></div>
+      <select id="category" required>
+        <option value="">Pilih Kategori</option>
+        <option value="makanan">Makanan</option>
+        <option value="minuman">Minuman</option>
+        <option value="cemilan">Cemilan</option>
+      </select>
+      <button type="submit" id="submit">Tambah</button>
+    </form>
+
+    <div class="menu-list" id="menu-list">
+      <table class="table" id="table-menu">
+      <thead>
+        <tr class="">
+          <th class="">#</th>
+          <th class="">Gambar</th>
+          <th class="">Menu</th>
+          <th class="">Deskripsi</th>
+          <th class="">Harga</th>
+          <th class="">Kategori</th>
+          <th class="">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>        
+      </tbody>
+    </table>
+    </div>
+  </main>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById("menu-form").reset();
+  });
+
+    document.getElementById("menu-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const mode = document.getElementById('mode').value;
+      const form = new FormData();
+      form.append("name", document.getElementById("name").value);
+      form.append("description", document.getElementById("description").value);
+      form.append("price", document.getElementById("price").value);
+      form.append("image", document.getElementById("image").files[0]);
+      form.append("category", document.getElementById("category").value);
+
+      if(mode == "add")
+      {
+        const res = await fetch('/api/admin/create-menu', {
+          method: 'POST',
+          body: form,
+        });
+        if(res.ok)
+      {
+        const data = await res.json();
+        alert(data.message);
+      } else {
+        alert('Gagal menambahkan menu');
+      }
+      } else {
+        const id = document.getElementById("id").value;
+        form.append("existing_image", document.getElementById("existing-image").value);
+        const res = await fetch('/api/admin/edit-menu/'+id, {
+          method: 'PUT',
+          body: form,
+        });
+        if(res.ok)
+      {
+        const data = await res.json();
+        alert(data.message);
+      } else {
+        alert('Gagal menambahkan menu');
+      }
+      }
+
+      e.target.reset();      
+    });
+
+    async function fetchMenu() {
+      const res = await fetch('/api/admin/menus');
+      const data = await res.json();
+      const table = document.getElementById('table-menu');
+      data.forEach((menu, index) => {
+        const row = table.insertRow();
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td><img width="100px" src="http://localhost:3000/assets/img/${menu.image_url}" alt="${menu.name}"></td>
+          <td>${menu.name}</td>
+          <td>${menu.description}</td>
+          <td>${menu.price}</td>
+          <td>${menu.category}</td>
+          <td>
+            <button class="btn btn-primary" onclick="editMenu(${menu.id})">Edit</button>
+            <button class="btn btn-danger" onclick="deleteMenu(${menu.id})">Hapus</button>
+          </td>
+        `;
+      });
+    }
+    document.addEventListener("DOMContentLoaded", fetchMenu);
+
+    async function editMenu(id)
+    {
+      document.getElementById('mode').value = "edit";
+      document.getElementById('submit').innerHTML = "Perbarui";
+      const res = await fetch(`/api/admin/menu/${id}`);
+      const data = await res.json();
+
+      document.getElementById('id').value = data.id;
+      document.getElementById('name').value = data.name;
+      document.getElementById('description').value = data.description;
+      document.getElementById('price').value = data.price;
+      document.getElementById('category').value = data.category;
+      document.getElementById('existing-image').value =  data.image_url;
+
+      const preview = document.getElementById('preview');
+      preview.innerHTML = `<img width="100px" src="http://localhost:3000/assets/img/${data.image_url}" alt="${data.name}">`;
+
+      
+    }
+    async function deleteMenu(id)
+{
+const confirm = window.confirm("Apakah anda yakin ingin menghapus menu ini?");
+if(!confirm) return
+const res = await fetch(`/api/admin/delete-menu/${id}`, {
+method: 'DELETE',
+});
+const data = await res.json();
+alert(data.message);
+location.reload();
+}
+  </script>
+  <script src="./script.js"></script>
+</body>
+</html>

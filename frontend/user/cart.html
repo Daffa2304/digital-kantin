@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keranjang Saya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gradient-to-br from-purple-100 to-indigo-200 min-h-screen text-gray-800">
+    <div class="max-w-3xl mx-auto p-6">
+      <!-- Tombol kembali -->
+      <a href="menu.html" class="inline-flex items-center text-indigo-700 hover:text-indigo-900 font-medium mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Kembali
+      </a>
+
+      <h1 class="text-3xl font-bold text-indigo-900 mb-6">🛒 Keranjang Saya</h1>
+
+      <div id="cartItems" class="space-y-4"></div>
+
+      <div class="mt-8 text-right">
+        <h2 class="text-xl font-semibold mb-2">
+          Total: <span class="text-green-600 font-bold">Rp <span id="totalPrice">0</span></span>
+        </h2>
+        <button
+          onclick="submitOrder()"
+          class="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition duration-200"
+        >
+          Pesan Sekarang
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+      function updateQuantity(menuId, action) {
+        const index = cart.findIndex((item) => item.menu_id === menuId);
+        if (index !== -1) {
+          if (action === "add") cart[index].quantity += 1;
+          else if (action === "sub") {
+            cart[index].quantity -= 1;
+            if (cart[index].quantity <= 0) cart.splice(index, 1);
+          }
+          localStorage.setItem("cart", JSON.stringify(cart));
+          renderCart();
+        }
+      }
+
+      function renderCart() {
+  const container = document.getElementById("cartItems");
+  const totalPriceEl = document.getElementById("totalPrice");
+  container.innerHTML = "";
+
+  let total = 0;
+
+  if (cart.length === 0) {
+    container.innerHTML = `<p class="text-center text-gray-600">Keranjang masih kosong.</p>`;
+    totalPriceEl.textContent = "0";
+    return;
+  }
+
+  cart.forEach((item) => {
+    total += item.price * item.quantity;
+    const div = document.createElement("div");
+    div.className =
+      "bg-white rounded-lg shadow-md p-4 flex items-center space-x-4";
+
+    div.innerHTML = `
+      <img src="/assets/img/${item.image}" alt="${item.name}" class="w-16 h-16 rounded-full object-cover border border-gray-300" />
+      <div class="flex-1 flex justify-between items-center">
+        <div>
+          <h2 class="font-bold text-lg text-indigo-800">${item.name}</h2>
+          <p class="text-gray-600 text-sm">Rp ${item.price.toLocaleString()}</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="updateQuantity(${item.menu_id}, 'sub')" class="bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600">−</button>
+          <span class="font-medium">${item.quantity}</span>
+          <button onclick="updateQuantity(${item.menu_id}, 'add')" class="bg-green-500 text-white px-3 py-1 rounded-full hover:bg-green-600">+</button>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+
+  totalPriceEl.textContent = total.toLocaleString();
+}
+
+
+  async function submitOrder() {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user || !user.id) {
+    alert("Silakan login terlebih dahulu.");
+    window.location.href = "/login"; // Tambahkan ini!
+    return;
+  }
+
+  const orderData = {
+    user_id: user.id,
+    items: cart.map((item) => ({
+      menu_id: item.menu_id,
+      menu_name: item.name,
+      quantity: item.quantity,
+    })),
+  };
+
+  try {
+    const res = await fetch("/api/orders/create-orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    if (res.ok) {
+      alert("Pesanan berhasil dikirim!");
+      localStorage.removeItem("cart");
+      window.location.href = "/user/orders.html";
+    } else if (res.status === 401) {
+      alert("Silakan login terlebih dahulu.");
+      window.location.href = "/login"; // Redirect jika backend juga balikin 401
+    } else {
+      const err = await res.json();
+      alert("Gagal memesan: " + err.message);
+    }
+  } catch (err) {
+    alert("Terjadi kesalahan saat memesan.");
+    console.error(err);
+  }
+}
+
+
+      renderCart();
+    </script>
+  </body>
+</html>

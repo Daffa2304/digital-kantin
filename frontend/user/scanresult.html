@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detail Pesanan</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-xl mx-auto bg-white shadow-md rounded-lg p-6">
+    <h1 class="text-xl font-bold mb-4 text-center">Detail Pesanan</h1>
+
+    <% if (orderDetails.length > 0) { %>
+      <p><strong>ID Pesanan:</strong> <%= orderDetails[0].order_id %></p>
+      <p><strong>ID User:</strong> <%= orderDetails[0].user_id %></p>
+      <p><strong>Waktu Pesan:</strong> <%= new Date(orderDetails[0].created_at).toLocaleString() %></p>
+      <p><strong>Total Harga:</strong> Rp <%= orderDetails[0].total_price.toLocaleString('id-ID') %></p>
+
+      <hr class="my-4">
+
+      <h2 class="text-lg font-semibold mb-2">Daftar Menu:</h2>
+      <ul class="list-disc ml-5">
+        <% orderDetails.forEach(item => { %>
+          <li><%= item.menu_name %> - <%= item.quantity %> porsi</li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="text-red-500">Pesanan tidak ditemukan.</p>
+    <% } %>
+  </div>
+</body>
+</html>

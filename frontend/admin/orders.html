@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin - Daftar Pesanan</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      h1 {
+        color: #1f2937;
+      }
+      table {
+        border-radius: 0.5rem;
+        overflow: hidden;
+      }
+      select {
+        outline: none;
+      }
+      .navbar {
+        background-color: #1f2937;
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .navbar a {
+        color: white;
+        text-decoration: none;
+        margin-left: 1.5rem;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <header class="navbar mb-8">
+      <div class="logo">Admin Kantin</div>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="menu.html" class="active">Kelola Menu</a>
+        <a href="orders.html">Pesanan</a>
+        <a href="#" onclick="logout()">Logout</a>
+      </nav>
+    </header>
+    <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
+      <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">
+        Daftar Pesanan Masuk
+      </h1>
+
+      <table id="table-order"
+        class="w-full table-auto border border-gray-300 rounded-lg overflow-hidden"
+      >
+        <thead>
+          <tr class="bg-blue-100 text-gray-700">
+            <th class="p-3 border">#</th>
+            <th class="p-3 border">User</th>
+            <th class="p-3 border">Menu</th>
+            <th class="p-3 border">Jumlah</th>
+            <th class="p-3 border">Status</th>
+            <th class="p-3 border">Tanggal Pesan</th>
+            <th class="p-3 border">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", fetchOrder);
+
+      async function fetchOrder() {
+        const res = await fetch('/api/admin/orders');
+        const data = await res.json();
+        const table = document.getElementById('table-order');
+        data.forEach((order, index) => {
+          const row = table.insertRow();
+          row.innerHTML = `
+            <td class="p-3 border text-center">${index + 1}</td>
+            <td class="p-3 border">${order.username}</td>
+            <td class="p-3 border">
+              <ul>
+                ${order.items.map(item => `<li>${item.menu_name} x ${item.quantity}</li>`).join('')}
+              </ul>
+            </td>
+            <td class="p-3 border text-center">${order.items.reduce((acc, item) => acc + item.quantity, 0)}</td>
+            <td class="p-3 border text-center">
+              <span class="inline-block px-2 py-1 rounded-full text-sm font-medium ${
+                order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                order.status === 'diproses' ? 'bg-blue-100 text-blue-700' :
+                order.status === 'selesai' ? 'bg-green-100 text-green-700' :
+                order.status === 'dibatalkan' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+              }">
+                ${order.status === 'pending' ? 'Pending' :
+                order.status === 'diproses' ? 'Diproses' :
+                order.status === 'selesai' ? 'Siap Diambil' :
+                order.status === 'dibatalkan' ? 'Dibatalkan' : 'Unknown'}
+            </span>
+
+            </td>
+            <td class="p-3 border text-center">${new Date(order.created_at).toLocaleString()}</td>
+            <td class="p-3 border text-center">
+              <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full" onclick="changeStatus(${order.order_id}, 'diproses')">Diproses</button>
+              <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full" onclick="changeStatus(${order.order_id}, 'selesai')">Siap Diambil</button>
+            </td>
+          `;
+        });
+      }
+
+      async function changeStatus(orderId, newStatus) {
+        const res = await fetch(`/api/admin/change-status-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ order_id: orderId, status: newStatus })
+        });
+        const data = await res.json();
+        if(res.ok) {
+          alert(data.message);
+          location.reload()
+        } else {
+          alert(data.message);
+        }        
+      }
+    </script>
+    <script src="./script.js"></script>
+  </body>
+</html>
